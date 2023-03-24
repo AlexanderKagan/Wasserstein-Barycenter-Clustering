@@ -102,4 +102,59 @@ class D2Cluster:
             
         return x
     
- 
+# ADDED on Mar.24th
+
+def gather_cluster(labels, P_list, cluster_number):
+    
+    indices = np.array(labels) == cluster_number
+    dists = np.array(P_list)[indices]
+    
+    return([dist.x for dist in dists])
+
+
+def wassdistance(source, target): # needs POT package -- for empirical distributions(data with uniform weights accross observations)
+    
+    M = ot.dist(source, target)
+    dist = ot.emd2(unif_weights, unif_weights, M)
+    
+    return dist
+    
+
+# function for clustering -- uses POT package, only for empirical distributions.
+# can replace the centroid calculation with other functions.
+# add to D2Cluster class once finalized.
+def clustering(Ps, K, numItermax = 1e4):
+
+    centroids = [np.random.randn(m, d) for count in range(K)]
+
+    for num in range(int(numItermax)):
+        
+        
+        #assign step
+        labels = []
+
+        for i in range(len(Ps)):
+
+            distances = [wassdistance(Ps[i].x, centroids[j]) for j in range(K)]
+            labels.append(distances.index(min(distances)))
+
+
+        #centroid update step
+        new_centroids = []
+
+        for k in range(K):
+            current_cluster = gather_cluster(labels, Ps, k)
+
+            if len(current_cluster) == 0: 
+                new_centroid = np.random.randn(m, d)
+            else:
+                new_centroid = np.mean(np.array(current_cluster), axis = 0) # getting new centroid: REPLACE
+
+            new_centroids.append(new_centroid)
+
+        if np.allclose(np.array(centroids), np.array(new_centroids)):
+                break
+
+        centroids = new_centroids
+        
+    return(labels)
