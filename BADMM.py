@@ -27,7 +27,6 @@ def badmm_centroid_update(Ps: List[DiscreteDistrib], c0: DiscreteDistrib = None,
                           rho=1e-2, nIter=10000, eps=1e-10,
                           tau=10, badmm_tol=1e-3,
                           verbose_interval=100):
-
     supp, stride, w = convert_Ps_to_supp_stride_w(Ps)
     d = supp.shape[0]
     n = len(stride)
@@ -72,7 +71,8 @@ def badmm_centroid_update(Ps: List[DiscreteDistrib], c0: DiscreteDistrib = None,
 
         tmp = np.sum(spZ, axis=1)
         tmp = np.reshape(tmp, (support_size, n))
-        dg = c.w / tmp
+
+        dg = c.w.reshape(-1, 1) / tmp
         dg = sparse.csr_matrix((np.array(dg).flatten(),
                                 (np.arange(n * support_size), np.arange(n * support_size))))
 
@@ -83,11 +83,12 @@ def badmm_centroid_update(Ps: List[DiscreteDistrib], c0: DiscreteDistrib = None,
 
         # update c.w
         tmp = tmp / np.sum(tmp, axis=0)
+
         sumW = np.array(np.sum(np.sqrt(tmp), axis=1)) ** 2
 
         c.w = sumW / np.sum(sumW)
         if iteration % tau == 0:
-            c.x = supp @ X.T / np.tile(np.sum(X, axis=1), (d, 1)).T
+            c.x = supp @ X.T / np.tile(np.sum(X, axis=1), (d, 1))
             C = distance_matrix(c.x.T, supp.T) ** 2
         if iteration % verbose_interval == 0:
             primres = np.linalg.norm(X - Z, 'fro') / np.linalg.norm(Z, 'fro')
