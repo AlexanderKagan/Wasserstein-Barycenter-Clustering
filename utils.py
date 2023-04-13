@@ -11,6 +11,8 @@ class DiscreteDistrib:
         self.w = w
         self.x = x
 
+    def __repr__(self):
+        return str(list(zip(self.x, self.w)))
 
 def discrete_wasserstein_distance(P1: DiscreteDistrib, P2: DiscreteDistrib, p=2,
                                   return_coupling=False):
