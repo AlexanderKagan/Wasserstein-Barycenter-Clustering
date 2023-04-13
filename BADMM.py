@@ -2,16 +2,38 @@ import numpy as np
 from utils import DiscreteDistrib
 from scipy import sparse
 from scipy.spatial import distance_matrix
+from typing import List
+from sklearn.cluster import KMeans
 
 
-def badmm_centroid_update(stride, supp, w, c0: DiscreteDistrib,
-                          rho=1e-2, nIter=1000, eps=1e-10,
-                          tau=10, badmm_tol=1e-3):
+def convert_Ps_to_supp_stride_w(Ps: List[DiscreteDistrib]):
+    supp = np.vstack([P.x for P in Ps]).T
+    stride = np.array([P.x.shape[0] for P in Ps])
+    w = np.hstack([P.w for P in Ps])
+    return supp, stride, w
+
+
+def init_kmeans_center(Ps, support_size):
+    supp, stride, w = convert_Ps_to_supp_stride_w(Ps)
+    kmeans = KMeans(n_clusters=support_size)
+    kmeans.fit(supp.T)
+
+    x = kmeans.cluster_centers_.T
+    w = np.histogram(kmeans.labels_, bins=support_size, range=(1, support_size + 1), density=True)[0]
+    return DiscreteDistrib(w, x)
+
+
+def badmm_centroid_update(Ps: List[DiscreteDistrib], c0: DiscreteDistrib = None,
+                          rho=1e-2, nIter=10000, eps=1e-10,
+                          tau=10, badmm_tol=1e-3,
+                          verbose_interval=100):
+
+    supp, stride, w = convert_Ps_to_supp_stride_w(Ps)
     d = supp.shape[0]
     n = len(stride)
     m = len(w)
 
-    c = c0
+    c = c0 if c0 is not None else init_kmeans_center(Ps, int(np.mean(stride)))
 
     support_size = len(c.w)
     posvec = np.concatenate(([0], np.cumsum(stride)))
@@ -61,16 +83,18 @@ def badmm_centroid_update(stride, supp, w, c0: DiscreteDistrib,
 
         # update c.w
         tmp = tmp / np.sum(tmp, axis=0)
-
         sumW = np.array(np.sum(np.sqrt(tmp), axis=1)) ** 2
+
         c.w = sumW / np.sum(sumW)
         if iteration % tau == 0:
             c.x = supp @ X.T / np.tile(np.sum(X, axis=1), (d, 1)).T
             C = distance_matrix(c.x.T, supp.T) ** 2
-        if iteration % 100 == 0:
+        if iteration % verbose_interval == 0:
             primres = np.linalg.norm(X - Z, 'fro') / np.linalg.norm(Z, 'fro')
             dualres = np.linalg.norm(Z - Z0, 'fro') / np.linalg.norm(Z, 'fro')
-            print(f'\t {iter} {np.sum(C * X) / n} {primres} {dualres}', end=' ')
+            cost = round(np.sum(C * X) / n, 3)
+            print(f'Iter: {iteration}, Avg cost {cost}, Primal: {round(primres, 4)}, Dual: {round(dualres, 4)}')
             if np.sqrt(dualres * primres) < badmm_tol:
+                print("Early stop activated!")
                 break
     return c

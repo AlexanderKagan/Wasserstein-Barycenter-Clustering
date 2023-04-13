@@ -11,6 +11,8 @@ from scipy.spatial import distance_matrix
 import scipy.stats as ss
 import ot ## should we use the POT module or use what we wrote
 import matplotlib.pyplot as plt
+from utils import DiscreteDistrib
+from BADMM import badmm_centroid_update
 
 import utilsV2
 
@@ -75,10 +77,7 @@ def assign_label(Ps, centroids):
 ##################################################
 
 
-
-
-
-def clustering(Ps, K, numItermax = 1e4):
+def clustering(Ps, K, numItermax = 1e4, centroid_update_kwargs={}):
 
     # Clustering framework
     # replace the centroid update step w/ Wasserstein computation algorithm
@@ -105,12 +104,8 @@ def clustering(Ps, K, numItermax = 1e4):
                 new_centroid = DiscreteDistrib(new_W, new_X)
                 
             else:
-                ###### REPLACE with Barycenter computation ######
-                new_X = np.mean(np.array([P.x for P in current_cluster]), axis = 0)
-                new_W = Ps[0].w
-                new_centroid = DiscreteDistrib(new_W, new_X)
-                ######
-                
+                new_centroid = badmm_centroid_update(current_cluster, **centroid_update_kwargs)
+
             centroids.append(new_centroid)
         
         # assign step
@@ -148,21 +143,19 @@ def disc_gauss_generator(n, mean, std, plotting = False):
     return(discgauss)
 
 
-# In[31]:
 
-
-nsamples = 100
-
-P1 = disc_gauss_generator(nsamples, 30, 3)
-P2 = disc_gauss_generator(nsamples, 50, 3)
-P3 = disc_gauss_generator(nsamples, 1000, 3)
-P4 = disc_gauss_generator(nsamples, 1200, 3)
-
-
-# In[97]:
-
-
-clustering([P1, P2, P3, P4], 2, numItermax = 100)
+# nsamples = 100
+#
+# P1 = disc_gauss_generator(nsamples, 30, 3)
+# P2 = disc_gauss_generator(nsamples, 50, 3)
+# P3 = disc_gauss_generator(nsamples, 1000, 3)
+# P4 = disc_gauss_generator(nsamples, 1200, 3)
+#
+#
+# # In[97]:
+#
+#
+# clustering([P1, P2, P3, P4], 2, numItermax = 100)
 
 
 
