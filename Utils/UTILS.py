@@ -95,14 +95,6 @@ class D2Cluster:
 
 
 
-
-
-
-
-######### TESTING
-
-# 1D Gaussian toy example
-
 def disc_gauss_generator(n, mean, std, plotting = False):
 
     # creates a discrete gaussian distribution
