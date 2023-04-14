@@ -54,7 +54,7 @@ def init_centroid(K, m, d):
         X = np.random.randn(m,d)
         W = np.ones(m) / m
 
-        centroids.append(DiscreteDistrib(W,X))
+        centroids.append(DiscreteDistrib(W, X))
         
     return(centroids)
 

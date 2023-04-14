@@ -6,13 +6,14 @@ from scipy.spatial import distance_matrix
 class DiscreteDistrib:
     def __init__(self, w, x):
         assert np.all(w >= 0), "weights should be positive"
-        assert np.sum(w) == 1., "weights should sum up to one"
+        assert np.allclose(np.sum(w), 1.), "weights should sum up to one"
 
         self.w = w
         self.x = x
 
     def __repr__(self):
         return str(list(zip(self.x, self.w)))
+
 
 def discrete_wasserstein_distance(P1: DiscreteDistrib, P2: DiscreteDistrib, p=2,
                                   return_coupling=False):
